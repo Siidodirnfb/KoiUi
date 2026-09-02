@@ -198,3 +198,99 @@ Crest:Notify({ Title = "Примечание", Content = "Настройки с�
 Crest:Notify({ Title = "Внимание", Content = "Слайдер влияет на скорость", Type = "Warning" })
 Crest:Notify({ Title = "Опасно", Content = "Скрипт может кикнуть", Type = "Danger" })
 ```
+
+Пример использования:
+```lua
+local Crest = loadstring(game:HttpGet("https://raw.githubusercontent.com/ВАШ_НИК/РЕПО/main/Crest.lua"))()
+
+local Window = Crest:CreateWindow({
+	Name = "Koi",
+	SubTitle = "v1.0",
+})
+
+local Tab1 = Window:AddTab({ Name = "Главный" })
+local Tab2 = Window:AddTab({ Name = "Настройки" })
+
+local Section1 = Tab1:AddSection({ Name = "Боевая" })
+
+Section1:AddButton({
+	Name = "Убить всех",
+	Callback = function()
+		print("Кнопка нажата!")
+	end,
+})
+
+local Fly = Section1:AddToggle({
+	Name = "Полёт",
+	Default = false,
+	Callback = function(value)
+		print("Полёт: " .. tostring(value))
+	end,
+})
+
+local Speed = Section1:AddSlider({
+	Name = "Скорость",
+	Min = 1,
+	Max = 200,
+	Default = 32,
+	Increment = 1,
+	Callback = function(value)
+		print("Скорость: " .. value)
+	end,
+})
+
+local Weapon = Section1:AddDropdown({
+	Name = "Оружие",
+	Options = { "Пистолет", "Дробовик", "Снайперка" },
+	Default = "Пистолет",
+	Callback = function(value)
+		print("Оружие: " .. value)
+	end,
+})
+
+local Bind = Section1:AddKeybind({
+	Name = "Активировать",
+	Default = Enum.KeyCode.F,
+	Callback = function()
+		print("Клавиша нажата")
+	end,
+})
+
+local Nick = Section1:AddTextbox({
+	Name = "Ник",
+	Default = "Игрок",
+	Placeholder = "введите ник",
+	Callback = function(text)
+		print("Ник: " .. text)
+	end,
+})
+
+local Color = Section1:AddColorPicker({
+	Name = "Цвет",
+	Default = Color3.fromRGB(94, 190, 148),
+	Callback = function(color)
+		print("Цвет: " .. color)
+	end,
+})
+
+local Info = Tab1:AddLabel({ Text = "Просто текст" })
+local Para = Tab1:AddParagraph({ Title = "Заголовок", Content = "Длинный текст абзаца" })
+Tab1:AddDivider()
+
+local SettingsSec = Tab2:AddSection({ Name = "Вид" })
+SettingsSec:AddToggle({ Name = "Скрыть интерфейс игры", Default = false })
+
+-- Получить/поставить значение программно
+Fly:Set(true)
+Speed:Set(64)
+Weapon:Set("Снайперка")
+Bind:Set(Enum.KeyCode.G)
+Nick:Set "Новый ник"
+Color:Set(Color3.fromRGB(255, 0, 0))
+
+-- Уведомления
+Crest:Notify({ Title = "Готово", Content = "Скрипт загружен", Type = "Info", Duration = 4 })
+Crest:Notify({ Title = "Внимание", Content = "Слайдер влияет на скорость", Type = "Warning" })
+Crest:Notify({ Title = "Опасно", Content = "Скрипт может кикнуть", Type = "Danger" })
+```
+
