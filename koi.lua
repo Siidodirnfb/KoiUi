@@ -341,7 +341,7 @@ function Koi:CreateWindow(cfg)
         Position = UDim2.new(1, -84, 0.5, 0),
         Size = UDim2.fromOffset(80, 20),
         Font = Enum.Font.Code,
-        Text = cfg.Version or "2.5",
+        Text = cfg.Version or "2.6",
         TextSize = 11,
         TextColor3 = T.SubText,
         TextXAlignment = Enum.TextXAlignment.Right,
@@ -392,7 +392,7 @@ function Koi:CreateWindow(cfg)
     local sidebar = new("Frame", {
         Position = UDim2.fromOffset(0, 40),
         Size = UDim2.new(0, 148, 1, -67),
-        BackgroundColor3 = T.Panel,
+        BackgroundColor3 = T.Background,
         BorderSizePixel = 0,
         Parent = main,
     })
@@ -629,7 +629,10 @@ function Koi:CreateWindow(cfg)
             t.container.Visible = active
             t.indicator.Visible = active
             tween(t.button, 0.14, { BackgroundColor3 = active and T.Element or T.Panel })
-            tween(t.stroke, 0.14, { Color = active and T.Accent or T.Stroke, Transparency = active and 0.25 or 0.55 })
+            tween(t.stroke, 0.14, {
+                Color = active and T.Accent or T.Stroke,
+                Transparency = active and 0 or 0.3,
+            })
             tween(t.glyph, 0.14, { TextColor3 = active and T.Accent or T.SubText })
             tween(t.name, 0.14, { TextColor3 = active and T.Text or T.SubText })
         end
@@ -644,7 +647,7 @@ function Koi:CreateWindow(cfg)
         local icon = t.Icon or "◇"
 
         local btn = new("TextButton", {
-            Size = UDim2.new(1, 0, 0, 34),
+            Size = UDim2.new(1, 0, 0, 36),
             BackgroundColor3 = T.Panel,
             BorderSizePixel = 0,
             Text = "",
@@ -653,7 +656,7 @@ function Koi:CreateWindow(cfg)
             Parent = sidebar,
         })
         round(btn, 5)
-        local stroke = border(btn, T.Stroke, 0.55)
+        local stroke = border(btn, T.Stroke, 0.3)
 
         local indicator = new("Frame", {
             AnchorPoint = Vector2.new(0, 0.5),
@@ -669,7 +672,7 @@ function Koi:CreateWindow(cfg)
         local glyph = new("TextLabel", {
             BackgroundTransparency = 1,
             Position = UDim2.fromOffset(12, 0),
-            Size = UDim2.fromOffset(18, 34),
+            Size = UDim2.fromOffset(18, 36),
             Font = Enum.Font.Code,
             Text = icon,
             TextSize = 12,
@@ -1089,10 +1092,9 @@ function Koi:CreateWindow(cfg)
                 return obj
             end
 
-            local function makeDropdownBase(c, rowTitle)
-                c = c or {}
+            local function makeDropdownBase(rowTitle, heightFn)
                 local wrapper, row, list = makeExpander()
-                rowLabel(row, rowTitle or c.Name or "dropdown")
+                rowLabel(row, rowTitle or "dropdown")
                 local valueLabel = new("TextLabel", {
                     BackgroundTransparency = 1,
                     AnchorPoint = Vector2.new(1, 0.5),
@@ -1130,6 +1132,7 @@ function Koi:CreateWindow(cfg)
                 new("UIListLayout", { Padding = UDim.new(0, 2), SortOrder = Enum.SortOrder.LayoutOrder, Parent = scroll })
 
                 local open = false
+                local lastToggle = 0
                 local function closeList()
                     open = false
                     tween(list, 0.18, { Size = UDim2.new(1, 0, 0, 0) })
@@ -1138,28 +1141,31 @@ function Koi:CreateWindow(cfg)
                         activeDropdown = nil
                     end
                 end
-                local function openList(height)
+                local function openList()
                     if activeDropdown then
                         activeDropdown.close()
                     end
                     open = true
-                    tween(list, 0.2, { Size = UDim2.new(1, 0, 0, height) })
+                    tween(list, 0.2, { Size = UDim2.new(1, 0, 0, heightFn()) })
                     tween(chev, 0.2, { Rotation = 180 })
                     activeDropdown = { close = closeList, root = wrapper }
                 end
                 row.InputBegan:Connect(function(input)
                     if input.UserInputType == Enum.UserInputType.MouseButton1
                         or input.UserInputType == Enum.UserInputType.Touch then
+                        local now = os.clock()
+                        if now - lastToggle < 0.2 then
+                            return
+                        end
+                        lastToggle = now
                         if open then
                             closeList()
                         else
-                            openList(#c.Options or 0)
+                            openList()
                         end
                     end
                 end)
-                return wrapper, scroll, valueLabel, closeList, openList, function()
-                    return open
-                end
+                return wrapper, scroll, valueLabel, closeList
             end
 
             local function makeOptionButton(parent, order, text)
@@ -1210,7 +1216,9 @@ function Koi:CreateWindow(cfg)
                 local callback = c.Callback
                 local optionButtons = {}
 
-                local wrapper, scroll, valueLabel, closeList, openList, isOpen = makeDropdownBase(c, c.Name)
+                local wrapper, scroll, valueLabel, closeList = makeDropdownBase(c.Name, function()
+                    return math.min(#options, 5) * 28 + 10
+                end)
 
                 local function render()
                     valueLabel.Text = selected and tostring(selected) or "—"
@@ -1245,9 +1253,6 @@ function Koi:CreateWindow(cfg)
                 build()
 
                 local obj = {}
-                obj._openHeight = function()
-                    return math.min(#options, 5) * 28 + 10
-                end
                 function obj:Set(v)
                     selected = v
                     render()
@@ -1285,7 +1290,9 @@ function Koi:CreateWindow(cfg)
                 local callback = c.Callback
                 local optionButtons = {}
 
-                local wrapper, scroll, valueLabel, closeList, openList, isOpen = makeDropdownBase(c, c.Name or "multi")
+                local wrapper, scroll, valueLabel, closeList = makeDropdownBase(c.Name or "multi", function()
+                    return math.min(#options, 5) * 28 + 10
+                end)
 
                 local function render()
                     if #chosen == 0 then
@@ -1581,6 +1588,7 @@ function Koi:CreateWindow(cfg)
                 end)
 
                 local open = false
+                local lastToggle = 0
                 local function closeList()
                     open = false
                     tween(list, 0.18, { Size = UDim2.new(1, 0, 0, 0) })
@@ -1591,6 +1599,11 @@ function Koi:CreateWindow(cfg)
                 row.InputBegan:Connect(function(input)
                     if input.UserInputType == Enum.UserInputType.MouseButton1
                         or input.UserInputType == Enum.UserInputType.Touch then
+                        local now = os.clock()
+                        if now - lastToggle < 0.2 then
+                            return
+                        end
+                        lastToggle = now
                         if open then
                             closeList()
                         else
