@@ -1,6 +1,6 @@
 --[[
 ──────────────────────────────────────────────────────────────
-  koi.ui · v2.4.1
+  koi.ui · v2.4.2
   библиотека интерфейса · ооп · одним файлом, без module-скриптов
 
   local Koi = loadstring(game:HttpGet("https://raw.githubusercontent.com/USER/REPO/main/koi.lua"))()
@@ -80,8 +80,6 @@ end
 local Koi = {}
 Koi.__index = Koi
 
--- Koi  — финал: уголь + приглушённый коралл
--- Bone — светлая «зеркальная» тема из шага 2
 Koi.Themes = {
     Koi = {
         Background   = Color3.fromRGB(17, 17, 21),
@@ -105,7 +103,6 @@ Koi.Themes = {
     },
 }
 
--- общее состояние: открытый список / захват клавиши
 local activeDropdown
 local bindListener
 
@@ -245,7 +242,6 @@ function Koi:CreateWindow(cfg)
         BackgroundColor3 = T.Accent, BorderSizePixel = 0, Parent = header,
     })
     round(dot, 3)
-    -- тихий пульс статуса
     TweenService:Create(dot,
         TweenInfo.new(1.2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true),
         { BackgroundTransparency = 0.55 }):Play()
@@ -259,7 +255,7 @@ function Koi:CreateWindow(cfg)
     new("TextLabel", {
         BackgroundTransparency = 1, AnchorPoint = Vector2.new(1, 0.5),
         Position = UDim2.new(1, -84, 0.5, 0), Size = UDim2.fromOffset(80, 20),
-        Font = Enum.Font.Code, Text = cfg.Version or "v2.4.1", TextSize = 11,
+        Font = Enum.Font.Code, Text = cfg.Version or "v2.4.2", TextSize = 11,
         TextColor3 = T.SubText, TextXAlignment = Enum.TextXAlignment.Right, Parent = header,
     })
 
@@ -270,6 +266,9 @@ function Koi:CreateWindow(cfg)
         TextColor3 = T.SubText, AutoButtonColor = false, Parent = header,
     })
     round(minBtn, 4)
+    minBtn.MouseEnter:Connect(function() tween(minBtn, 0.12, { TextColor3 = T.Text }) end)
+    minBtn.MouseLeave:Connect(function() tween(minBtn, 0.16, { TextColor3 = T.SubText }) end)
+
     local closeBtn = new("TextButton", {
         AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -12, 0.5, 0),
         Size = UDim2.fromOffset(24, 24), BackgroundColor3 = T.Accent,
@@ -315,17 +314,16 @@ function Koi:CreateWindow(cfg)
         Size = UDim2.new(1, 0, 0, 1), Parent = main,
     })
     new("TextLabel", {
-        BackgroundTransparency = 1, Position = UDim2.new(0, 0, 1, -26),
-        Size = UDim2.new(1, -12, 0, 26), Font = Enum.Font.Code,
+        BackgroundTransparency = 1, Position = UDim2.new(0, 14, 1, -26),
+        Size = UDim2.new(1, -28, 0, 26), Font = Enum.Font.Code,
         Text = ("press [%s] to hide · drag header to move"):format(shortKey(toggleKey)),
         TextSize = 11, TextColor3 = T.SubText,
         TextXAlignment = Enum.TextXAlignment.Left, Parent = main,
     })
-    new("UIPadding", { PaddingLeft = UDim.new(0, 14), Parent = main }) -- не добавляем: паддинг на main сдвинет всё
-    -- (строку выше нейтрализуем — паддинг на main запрещён)
-    main:FindFirstChildOfClass("UIPadding"):Destroy()
 
-    -- ── скрытие / показ (крестик + кнопка show)
+    -- ── скрытие / показ
+    -- FIX #2: forward-объявление — замыкания ниже видят одни и те же локальные
+    local show, hide
 
     local basePos = main.Position
 
@@ -347,7 +345,7 @@ function Koi:CreateWindow(cfg)
     end)
     showBtn.MouseButton1Click:Connect(function() show() end)
 
-    local function hide()
+    function hide()
         if not window.Open then return end
         window.Open = false
         if activeDropdown then activeDropdown.close() end
@@ -362,7 +360,7 @@ function Koi:CreateWindow(cfg)
         tween(showStroke, 0.3, { Transparency = 0.75 })
     end
 
-    local function show()
+    function show()
         if window.Open then return end
         window.Open = true
         main.Visible = true
@@ -506,11 +504,19 @@ function Koi:CreateWindow(cfg)
             if not container.Visible then tween(btn, 0.16, { BackgroundColor3 = T.Panel }) end
         end)
 
-        local tab = { Name = tabName }
+        -- FIX #1: ссылки на виджеты хранятся в объекте таба
+        local tab = {
+            Name = tabName,
+            container = container,
+            button = btn,
+            indicator = indicator,
+            glyph = glyph,
+            name = name,
+        }
         btn.MouseButton1Click:Connect(function() selectTab(tab) end)
         function tab:Select() selectTab(tab) end
 
-        -- ── секции (заголовок "// name" + элемент внутри)
+        -- ── секции
 
         local secOrder = 0
 
@@ -523,12 +529,12 @@ function Koi:CreateWindow(cfg)
                 AutomaticSize = Enum.AutomaticSize.Y,
                 LayoutOrder = secOrder, Parent = container,
             })
-            new("Frame", { -- линия заголовка
+            new("Frame", {
                 BackgroundColor3 = T.Stroke, BackgroundTransparency = 0.25,
                 BorderSizePixel = 0, Position = UDim2.fromOffset(0, 9),
                 Size = UDim2.new(1, 0, 0, 1), Parent = holder,
             })
-            new("TextLabel", { -- перекрывает линию фоном — дешёвый «разрыв»
+            new("TextLabel", {
                 BackgroundColor3 = T.Background, BorderSizePixel = 0,
                 Position = UDim2.fromOffset(2, 0),
                 AutomaticSize = Enum.AutomaticSize.X, Size = UDim2.new(0, 0, 0, 18),
@@ -567,7 +573,7 @@ function Koi:CreateWindow(cfg)
                 })
             end
 
-            local function makeExpander() -- wrapper: строка + выпадающая панель
+            local function makeExpander()
                 local wrapper = new("Frame", {
                     BackgroundTransparency = 1, Size = UDim2.new(1, 0, 0, 0),
                     AutomaticSize = Enum.AutomaticSize.Y,
@@ -732,12 +738,16 @@ function Koi:CreateWindow(cfg)
                     end
                 end)
                 connect(UserInputService.InputChanged, function(input)
-                    if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+                    if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement
+                        or input.UserInputType == Enum.UserInputType.Touch) then
                         apply(input.Position.X)
                     end
                 end)
                 connect(UserInputService.InputEnded, function(input)
-                    if input.UserInputType == Enum.UserInputType.MouseButton1 then dragging = false end
+                    if input.UserInputType == Enum.UserInputType.MouseButton1
+                        or input.UserInputType == Enum.UserInputType.Touch then
+                        dragging = false
+                    end
                 end)
                 set(value, true)
 
@@ -759,7 +769,7 @@ function Koi:CreateWindow(cfg)
                 local optionButtons = {}
 
                 local wrapper, row, list = makeExpander()
-                local label = rowLabel(row, c.Name or "dropdown")
+                rowLabel(row, c.Name or "dropdown")
                 local valueLabel = new("TextLabel", {
                     BackgroundTransparency = 1, AnchorPoint = Vector2.new(1, 0.5),
                     Position = UDim2.new(1, -34, 0.5, 0), Size = UDim2.new(0.45, 0, 1, 0),
@@ -799,8 +809,8 @@ function Koi:CreateWindow(cfg)
 
                 local function render()
                     valueLabel.Text = selected and tostring(selected) or "—"
-                    for name, o in pairs(optionButtons) do
-                        local on = (name == tostring(selected))
+                    for name2, o in pairs(optionButtons) do
+                        local on = (name2 == tostring(selected))
                         o.dot.Visible = on
                         o.label.TextColor3 = on and T.Accent or T.Text
                     end
@@ -851,7 +861,10 @@ function Koi:CreateWindow(cfg)
                 end)
 
                 local obj = {}
-                function obj:Set(v) selected = v render() end
+                function obj:Set(v)
+                    selected = v
+                    render()
+                end
                 function obj:Get() return selected end
                 function obj:SetCallback(f) callback = f end
                 function obj:Refresh(newOpts)
@@ -1014,7 +1027,10 @@ function Koi:CreateWindow(cfg)
                     cap.Text, cap.TextColor3 = "···", T.Accent
                     bindListener = obj
                 end)
-                function obj:Set(k) key = k cap.Text = k and shortKey(k) or "none" end
+                function obj:Set(k)
+                    key = k
+                    cap.Text = k and shortKey(k) or "none"
+                end
                 function obj:Get() return key end
                 function obj:SetCallback(f) callback = f end
                 registerFlag(c, function() return key end, function(k) obj:Set(k) end)
@@ -1050,32 +1066,31 @@ function Koi:CreateWindow(cfg)
                 end)
 
                 local obj = {}
-                function obj:SetText(t) box.Text = t end
+                function obj:SetText(t2) box.Text = t2 end
                 function obj:Get() return box.Text end
                 function obj:SetCallback(f) callback = f end
-                registerFlag(c, function() return box.Text end, function(t) box.Text = t end)
+                registerFlag(c, function() return box.Text end, function(t2) box.Text = t2 end)
                 return obj
             end
 
             -- ······ выбор цвета
+            -- FIX #3: раньше здесь было makeRow + makeExpander одновременно
+            -- (лишняя пустая плашка между свотчем и палитрой). Теперь один expander-роу.
 
             function section:AddColorPicker(c)
                 c = c or {}
                 local current = c.Default or T.Accent
                 local callback = c.Callback
 
-                local row = makeRow(34)
+                local wrapper, row, list = makeExpander()
                 rowLabel(row, c.Name or "color")
-                local swatch = new("TextButton", {
+                local swatch = new("Frame", {
                     AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -12, 0.5, 0),
                     Size = UDim2.fromOffset(36, 20), BackgroundColor3 = current,
-                    Text = "", AutoButtonColor = false, BorderSizePixel = 0, Parent = row,
+                    BorderSizePixel = 0, Parent = row,
                 })
                 round(swatch, 4)
                 border(swatch, T.Stroke, 0.5)
-
-                local wrapper, _, list = makeExpander()
-                list.Position = UDim2.fromOffset(0, 38)
 
                 local hueBar = new("Frame", {
                     Position = UDim2.fromOffset(6, 6), Size = UDim2.new(1, -12, 0, 12),
@@ -1122,7 +1137,8 @@ function Koi:CreateWindow(cfg)
 
                 local dragging = false
                 local function apply(x)
-                    hueHandle.Position = UDim2.new(math.clamp((x - hueBar.AbsolutePosition.X) / math.max(hueBar.AbsoluteSize.X, 1), 0, 1), 0, 0.5, 0)
+                    hueHandle.Position = UDim2.new(
+                        math.clamp((x - hueBar.AbsolutePosition.X) / math.max(hueBar.AbsoluteSize.X, 1), 0, 1), 0, 0.5, 0)
                     setColor(Color3.fromHSV(hueHandle.Position.X.Scale, s, v))
                 end
                 hueBar.InputBegan:Connect(function(input)
@@ -1132,12 +1148,16 @@ function Koi:CreateWindow(cfg)
                     end
                 end)
                 connect(UserInputService.InputChanged, function(input)
-                    if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+                    if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement
+                        or input.UserInputType == Enum.UserInputType.Touch) then
                         apply(input.Position.X)
                     end
                 end)
                 connect(UserInputService.InputEnded, function(input)
-                    if input.UserInputType == Enum.UserInputType.MouseButton1 then dragging = false end
+                    if input.UserInputType == Enum.UserInputType.MouseButton1
+                        or input.UserInputType == Enum.UserInputType.Touch then
+                        dragging = false
+                    end
                 end)
                 hexBox.FocusLost:Connect(function()
                     local col = fromHex(hexBox.Text)
@@ -1150,12 +1170,17 @@ function Koi:CreateWindow(cfg)
                     tween(list, 0.18, { Size = UDim2.new(1, 0, 0, 0) })
                     if activeDropdown and activeDropdown.close == closeList then activeDropdown = nil end
                 end
-                swatch.MouseButton1Click:Connect(function()
-                    if open then closeList() return end
-                    if activeDropdown then activeDropdown.close() end
-                    open = true
-                    tween(list, 0.2, { Size = UDim2.new(1, 0, 0, 56) })
-                    activeDropdown = { close = closeList, root = wrapper }
+                row.InputBegan:Connect(function(input)
+                    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                        if open then
+                            closeList()
+                        else
+                            if activeDropdown then activeDropdown.close() end
+                            open = true
+                            tween(list, 0.2, { Size = UDim2.new(1, 0, 0, 56) })
+                            activeDropdown = { close = closeList, root = wrapper }
+                        end
+                    end
                 end)
 
                 setColor(current, true)
@@ -1179,7 +1204,7 @@ function Koi:CreateWindow(cfg)
                     LayoutOrder = nextOrder(), Parent = inner,
                 })
                 local obj = {}
-                function obj:SetText(t) l.Text = t end
+                function obj:SetText(t2) l.Text = t2 end
                 return obj
             end
 
@@ -1208,8 +1233,8 @@ function Koi:CreateWindow(cfg)
                 })
                 new("UIPadding", { PaddingBottom = UDim.new(0, 10), Parent = holder })
                 local obj = {}
-                function obj:SetText(t) body.Text = t end
-                function obj:SetTitle(t) title.Text = t end
+                function obj:SetText(t2) body.Text = t2 end
+                function obj:SetTitle(t2) title.Text = t2 end
                 return obj
             end
 
