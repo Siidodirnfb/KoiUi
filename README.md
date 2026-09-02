@@ -1,11 +1,9 @@
 # Koi
 
-Библиотека интерфейса для Roblox в одном файле. Тёмная тема, табы колонкой слева, окно перетаскивается мышью или пальцем.
-
 ## Загрузка
 
 ```lua
-local Crest = loadstring(game:HttpGet("https://raw.githubusercontent.com/Siidodirnfb/KoiUi/main/Koi.lua"))()
+local Crest = loadstring(game:HttpGet("https://raw.githubusercontent.com/Siidodirnfb/KoiUi/main/koi.lua"))()
 ```
 
 ## Окно
